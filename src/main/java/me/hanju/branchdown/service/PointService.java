@@ -28,42 +28,61 @@ public class PointService {
   private final BranchRepository branchRepository;
 
   /**
-   * 지정한 PointEntity 아래에 적절한 브랜칭을 후 PointEntity를 새로 추가한다.
+   * 부모 포인트 아래에 새 포인트를 추가할 브랜치를 결정합니다.
+   * 이어지는 브랜치가 없다면 기존 브랜치를 사용하고,
+   * 있다면 신규 브랜치를 생성합니다.
+   *
+   * @param parent 부모 포인트
+   * @return 새 포인트가 속할 브랜치
+   */
+  public BranchEntity resolveBranch(final PointEntity parent) {
+    // 이어지는 브랜치가 없음
+    if (parent.getChildBranchNums().length == 0) {
+      return parent.getBranch();
+    }
+
+    // 신규 브랜치 생성
+    final BranchEntity parentBranch = parent.getBranch();
+    final StreamEntity stream = parentBranch.getStream();
+    final String newPath = PathUtils.append(
+        parentBranch.getPath(),
+        parentBranch.getBranchNum());
+    final BranchEntity newBranch = branchRepository.save(
+        BranchEntity.builder()
+            .id(new BranchId(stream.getId(), stream.getNextBranchNum()))
+            .stream(stream)
+            .path(newPath)
+            .build());
+    stream.addBranch(newBranch);
+
+    return newBranch;
+  }
+
+  /**
+   * 지정한 PointEntity 아래에 적절한 브랜칭 후 PointEntity를 새로 추가한다.
    *
    * @param id     지정할 PointEntity의 id
    * @param itemId 새로 추가할 PointEntity에 들어갈 item의 ID
-   * @return
+   * @return 생성된 포인트 응답
    */
   @Transactional
   public PointDto.Response pointDown(Long id, String itemId) {
     // 1. 기준 포인트 확인
-    PointEntity point = pointRepository.findById(id)
+    PointEntity point = pointRepository
+        .findById(id)
         .orElseThrow(() -> new NoSuchElementException("Point not found"));
 
-    // 2. 브랜치 상태 확인
-    BranchEntity branch;
-    // 2-1. 이어지는 브랜치가 없다면 기존 브랜치 사용
-    if (point.getChildBranchNums().length == 0) {
-      branch = point.getBranch();
-    } else {
-      // 2-2. 이어지는 브랜치가 있다면 신규 브랜치 생성
-      BranchEntity parentBranch = point.getBranch();
-      StreamEntity stream = parentBranch.getStream();
-      String newPath = PathUtils.append(parentBranch.getPath(), parentBranch.getBranchNum());
-
-      branch = branchRepository.save(
-          BranchEntity.builder()
-              .id(new BranchId(stream.getId(), stream.getNextBranchNum()))
-              .stream(stream)
-              .path(newPath)
-              .build());
-      stream.addBranch(branch);
-    }
+    // 2. 브랜치 결정
+    BranchEntity branch = resolveBranch(point);
     point.addChildBranchNum(branch.getBranchNum());
 
     // 3. 포인트 추가
     PointEntity newPoint = pointRepository.save(
-        PointEntity.builder().branch(branch).depth(point.getDepth() + 1).itemId(itemId).build());
+        PointEntity.builder()
+            .branch(branch)
+            .depth(point.getDepth() + 1)
+            .itemId(itemId)
+            .build());
     branch.addPoint(newPoint);
 
     return newPoint.toResponse();
@@ -78,7 +97,8 @@ public class PointService {
    * @return 자신 포함 조상 Point 목록 (depth 오름차순, 루트 제외)
    */
   public List<PointDto.Response> getAncestors(Long id) {
-    PointEntity point = pointRepository.findById(id)
+    PointEntity point = pointRepository
+        .findById(id)
         .orElseThrow(() -> new NoSuchElementException("Point not found"));
 
     BranchEntity branch = point.getBranch();
@@ -90,7 +110,9 @@ public class PointService {
         branch.getBranchNum());
 
     List<PointEntity> ancestors = pointRepository.findAncestorsUsingPath(
-        streamId, Arrays.stream(branchNums).boxed().toList(), point.getDepth());
+        streamId,
+        Arrays.stream(branchNums).boxed().toList(),
+        point.getDepth());
 
     return ancestors.stream().map(PointEntity::toResponse).toList();
   }

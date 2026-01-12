@@ -44,3 +44,7 @@ logging:
             bind: TRACE
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
+
+branchdown:
+  api:
+    enabled: true
