@@ -35,13 +35,13 @@ Stream
 
 ### 로컬 개발 환경 (Testcontainers)
 
-Testcontainers를 사용하여 MariaDB와 함께 로컬에서 실행합니다. Docker가 실행 중이어야 합니다.
+Testcontainers를 사용하여 PostgreSQL과 함께 로컬에서 실행합니다. Docker가 실행 중이어야 합니다.
 
 ```bash
 git clone https://github.com/agent-hanju/branchdown.git
 cd branchdown
 
-# 실행 (Testcontainers로 MariaDB 자동 시작)
+# 실행 (Testcontainers로 PostgreSQL 자동 시작)
 ./gradlew bootTestRun
 
 # 동작 확인
@@ -126,7 +126,7 @@ open http://localhost:8080/docs
 | POST   | `/api/points/{id}/down`      | Point 추가 (지정한 Point 아래에 추가, 브랜칭 포함) |
 | GET    | `/api/points/{id}/ancestors` | 조상 Point 조회 (자신 포함, 루트 제외)             |
 
-자세한 API 명세는 [DATABASE_DESIGN.md](DATABASE_DESIGN.md) 참조
+자세한 API 명세는 [DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md) 참조
 
 ## 프로젝트 구조
 
@@ -166,8 +166,8 @@ branchdown/
 
 | 환경        | 프로파일 | 데이터베이스           |
 | ----------- | -------- | ---------------------- |
-| 개발/테스트 | (기본)   | Testcontainers MariaDB |
-| 운영        | prod     | 외부 MariaDB           |
+| 개발/테스트 | (기본)   | Testcontainers PostgreSQL |
+| 운영        | prod     | 외부 PostgreSQL           |
 
 ### 운영 환경 (prod profile)
 
@@ -182,43 +182,38 @@ services:
       - '8081:8081'
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      MARIADB_URL: jdbc:mariadb://mariadb:3306/${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       # DDL_AUTO: update (기본값) | validate | none
-      # Consul (선택)
-      # CONSUL_ENABLED: true
-      # CONSUL_HOST: consul
     depends_on:
-      mariadb:
+      postgres:
         condition: service_healthy
 
-  mariadb:
-    image: mariadb:10.11
+  postgres:
+    image: postgres:18
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  mariadb_data:
+  postgres_data:
 ```
 
 환경변수는 `.env` 파일로 관리 (`.env.example` 참조):
 
 ```bash
-MARIADB_ROOT_PASSWORD=your_root_password
-MARIADB_DATABASE=branchdown_db
-MARIADB_USER=branchdown
-MARIADB_PASSWORD=your_app_password
+POSTGRES_DB=branchdown_db
+POSTGRES_USER=branchdown
+POSTGRES_PASSWORD=your_app_password
 ```
 
 ### 주요 환경변수
@@ -226,8 +221,6 @@ MARIADB_PASSWORD=your_app_password
 | 환경변수         | 기본값      | 설명                                              |
 | ---------------- | ----------- | ------------------------------------------------- |
 | `DDL_AUTO`       | `update`    | Hibernate DDL 전략 (`update`, `validate`, `none`) |
-| `CONSUL_ENABLED` | `false`     | Consul Discovery 활성화 여부                      |
-| `CONSUL_HOST`    | `localhost` | Consul 서버 호스트                                |
 
 **운영 환경 특징:**
 
@@ -238,7 +231,8 @@ MARIADB_PASSWORD=your_app_password
 
 ## 문서
 
-- **[DATABASE_DESIGN.md](DATABASE_DESIGN.md)** - 데이터베이스 설계 (테이블 명세)
+- **[DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md)** - 데이터베이스 설계 (테이블 명세)
+- **[TREE_STRUCTURE_DESIGN.md](docs/TREE_STRUCTURE_DESIGN.md)** - Tree 객체 모델과 부분/추가 적재 설계
 - **[Swagger UI](http://localhost:8080/docs)** - API 문서 (실행 중일 때)
 
 ---

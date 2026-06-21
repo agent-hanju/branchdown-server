@@ -26,13 +26,6 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
 ### VS Code ###
 .vscode/
 *.code-workspace
@@ -50,14 +43,23 @@ logs/
 ### Environment ###
 .env
 .env.*
+!.env.example
 application-local.yml
 application-local.properties
+application-*.local.yml
+application-*.local.properties
 
 ### Database ###
 *.db
+*.sqlite
 *.h2.db
 *.trace.db
 *.lock.db
+
+### JVM diagnostics ###
+hs_err_pid*
+replay_pid*
+*.hprof
 
 ### Test Reports ###
 **/build/reports/
@@ -74,5 +76,8 @@ application-local.properties
 *.bak
 *.swp
 
-### Application Specific ###
-HELP.md
+### Coding agent ###
+/.agent/*
+/.claude/*
+CLAUDE.md
+AGENTS.md

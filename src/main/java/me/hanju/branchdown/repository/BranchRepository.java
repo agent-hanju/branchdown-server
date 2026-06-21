@@ -4,13 +4,11 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import me.hanju.branchdown.entity.BranchEntity;
 import me.hanju.branchdown.entity.StreamEntity;
 import me.hanju.branchdown.entity.id.BranchId;
 
-@Repository
 public interface BranchRepository extends JpaRepository<BranchEntity, BranchId> {
 
   @Query("""

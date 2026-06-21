@@ -4,11 +4,9 @@
 .gitattributes
 
 # Gradle
-.gradle
-build
-!build/libs/*.jar
+.gradle/
+build/
 gradle-app.setting
-!gradle/wrapper/gradle-wrapper.jar
 .gradletasknamecache
 
 # IDE files
@@ -28,9 +26,6 @@ gradle-app.setting
 
 # Eclipse
 bin/
-
-# Claude Code settings
-.claude/
 
 # Documentation
 *.md
@@ -58,6 +53,9 @@ tmp/
 temp/
 *.tmp
 *.bak
+*.swp
+*.swo
+*~
 
 # Environment files
 .env
@@ -72,6 +70,11 @@ application-*.local.properties
 *.trace.db
 *.lock.db
 
+# JVM diagnostics
+hs_err_pid*
+replay_pid*
+*.hprof
+
 # Build artifacts (except final jar)
 out/
 target/
@@ -84,3 +87,7 @@ Thumbs.db
 Dockerfile
 .dockerignore
 docker-compose*.yml
+
+### Coding agent ###
+/.agent/*
+/.claude/*

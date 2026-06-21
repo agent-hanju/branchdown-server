@@ -6,7 +6,7 @@
 
 | 컬럼              | 타입         | 제약               | 설명                      |
 | ----------------- | ------------ | ------------------ | ------------------------- |
-| `stream_id`       | BIGINT       | PK, AUTO_INCREMENT | 스트림 ID                 |
+| `stream_id`       | BIGINT       | PK, IDENTITY       | 스트림 ID                 |
 | `next_branch_num` | INT          | DEFAULT 0          | 다음에 생성될 브랜치 번호 |
 | `created_at`      | TIMESTAMP(6) | NOT NULL           | 생성 시간                 |
 
@@ -24,9 +24,9 @@
 
 | 컬럼                | 타입         | 제약                                | 설명                                           |
 | ------------------- | ------------ | ----------------------------------- | ---------------------------------------------- |
-| `point_id`          | BIGINT       | PK, AUTO_INCREMENT                  | 포인트 고유 ID                                 |
-| `stream_id`         | BIGINT       | FK → branches(stream_id), NOT NULL  | 소속 스트림 ID                                 |
-| `branch_num`        | INT          | FK → branches(branch_num), NOT NULL | 소속 브랜치 번호                               |
+| `point_id`          | BIGINT       | PK, IDENTITY                        | 포인트 고유 ID                                 |
+| `stream_id`         | BIGINT       | FK → branches(stream_id, branch_num), NOT NULL | 소속 스트림 ID                    |
+| `branch_num`        | INT          | FK → branches(stream_id, branch_num), NOT NULL | 소속 브랜치 번호                  |
 | `item_id`           | VARCHAR(255) | NULLABLE                            | 저장할 아이템의 ID (root는 NULL)               |
 | `depth`             | INT          | NOT NULL                            | 깊이 (0부터 시작)                              |
 | `child_branch_nums` | VARCHAR(256) | DEFAULT ''                          | 이 포인트에서 분기된 브랜치 번호들 (쉼표 구분) |
@@ -57,6 +57,6 @@ Append-only 구조를 활용하여 특정 Branch의 모든 Point를 효율적으
 
 상세한 구현은 Entity 코드 참조:
 
-- [StreamEntity](src/main/java/me/hanju/branchdown/entity/StreamEntity.java)
-- [BranchEntity](src/main/java/me/hanju/branchdown/entity/BranchEntity.java)
-- [PointEntity](src/main/java/me/hanju/branchdown/entity/PointEntity.java)
+- [StreamEntity](../src/main/java/me/hanju/branchdown/entity/StreamEntity.java)
+- [BranchEntity](../src/main/java/me/hanju/branchdown/entity/BranchEntity.java)
+- [PointEntity](../src/main/java/me/hanju/branchdown/entity/PointEntity.java)

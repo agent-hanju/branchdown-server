@@ -60,17 +60,20 @@ public class StreamEntity {
 
   /** 다음에 붙일 브랜치 번호(addBranch 시 동시에 업데이트) */
   @Builder.Default
-  @Column(name = "next_branch_num")
-  @Comment("다음에 붙일 브랜치 번호")
+  @Column(name = "next_branch_num", comment = "다음에 붙일 브랜치 번호")
   private Integer nextBranchNum = 0;
 
   public void addBranch(final BranchEntity branch) {
     if (branch != null) {
       this.branches.add(branch);
-      nextBranchNum = this.branches.size();
+      nextBranchNum = Math.max(nextBranchNum, branch.getBranchNum() + 1);
     }
   }
 
+  /**
+   * DTO로 변환
+   * @return 알맞은 DTO
+   */
   public StreamDto.Response toResponse() {
     return new StreamDto.Response(this.id, this.createdAt);
   }

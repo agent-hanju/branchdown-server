@@ -28,6 +28,5 @@ public class BranchId implements Serializable {
   private Long streamId;
 
   /** 스트림의 각 브랜치에 붙는 번호. 0부터 시작해 순차적으로 쌓인다. */
-  @Comment("스트림의 각 브랜치에 붙는 번호. 0부터 시작해 순차적으로 쌓인다.")
   private int branchNum;
 }

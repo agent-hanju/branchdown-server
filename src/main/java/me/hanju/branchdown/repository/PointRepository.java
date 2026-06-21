@@ -4,20 +4,26 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 
 import me.hanju.branchdown.entity.PointEntity;
 
-@Repository
 public interface PointRepository extends JpaRepository<PointEntity, Long> {
 
+  @Query("""
+      SELECT p
+      FROM PointEntity p
+      WHERE p.stream.id = :streamId
+      ORDER BY p.depth ASC, p.branchNum ASC, p.id ASC
+      """)
+  List<PointEntity> findAllByStreamId(Long streamId);
+
   /**
-   * 특정 브랜치의 depth를 초과하는 Point들을 조회합니다.
+   * 특정 브랜치 경로에서 depth를 초과하는 Point들을 조회합니다.
    *
    * @param streamId   스트림 ID
    * @param branchNums 브랜치 경로 (path를 파싱한 결과 + 자기 자신의 branchNum)
-   * @param depth      최대 depth (이 depth 이하의 Point들을 조회, 자기 자신 포함, 루트 제외)
-   * @return 자신 포함 조상 Point 목록 (depth 오름차순, 루트 제외)
+   * @param depth      지정 depth (이 depth 이후의 Point들을 조회)
+   * @return 지정한 경로의 depth 초과 Point 목록 (depth 오름차순)
    */
   @Query(value = """
       SELECT * FROM points AS p
@@ -38,8 +44,7 @@ public interface PointRepository extends JpaRepository<PointEntity, Long> {
       int depth);
 
   /**
-   * 특정 Point와 그 조상 Point들을 조회합니다.
-   * 같은 branch 경로 내에서 루트(depth=0) 초과, depth 이하의 Point들을 반환합니다.
+   * 특정 브랜치 경로 내에서 루트(depth=0) 초과, depth 이하의 Point들을 반환합니다.
    *
    * @param streamId   스트림 ID
    * @param branchNums 브랜치 경로 (path를 파싱한 결과 + 자기 자신의 branchNum)

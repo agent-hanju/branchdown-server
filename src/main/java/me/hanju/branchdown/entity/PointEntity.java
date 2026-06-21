@@ -20,7 +20,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PostLoad;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -49,8 +48,7 @@ import me.hanju.branchdown.util.PathUtils;
 @DynamicUpdate
 public class PointEntity {
 
-  // 수동 동기화 필요
-  @PostLoad
+  // branch_num은 insertable=false라 INSERT SQL에 포함되지 않으므로, INSERT 후 메모리상 branchNum을 branch에서 수동 보정
   @PostPersist
   public void syncBranchNum() {
     if (this.branch != null) {
@@ -63,13 +61,11 @@ public class PointEntity {
   @Column(name = "point_id")
   private Long id;
 
-  @Column(name = "item_id", updatable = false)
-  @Comment("저장할 아이템의 ID, root의 경우 null")
+  @Column(name = "item_id", updatable = false, comment = "저장할 아이템의 ID, root는 항상 null")
   private String itemId;
 
   /** 0부터 시작하는 stream 내에서의 depth */
-  @Column(name = "depth", nullable = false, updatable = false)
-  @Comment("0부터 시작하는 stream 내에서의 depth")
+  @Column(name = "depth", nullable = false, updatable = false, comment = "0부터 시작하는 stream 내에서의 depth")
   private int depth;
 
   @CreatedDate
@@ -96,21 +92,18 @@ public class PointEntity {
    */
   @Getter(AccessLevel.PRIVATE)
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "stream_id", referencedColumnName = "stream_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "FK_point_to_stream"))
-  @Comment("소속 스트림 ID")
+  @JoinColumn(name = "stream_id", referencedColumnName = "stream_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "FK_point_to_stream"), comment = "소속 스트림 ID")
   private StreamEntity stream;
 
   /** 이 포인트의 소속 브랜치 번호(읽기 전용), branch 필드에 의해 결정 */
-  @Column(name = "branch_num", insertable = false, updatable = false)
-  @Comment("소속 브랜치의 branchNum")
+  @Column(name = "branch_num", insertable = false, updatable = false, comment = "소속 브랜치의 branchNum")
   private Integer branchNum;
   // ====================================
 
   /** 이 포인트 아래로 이어지는 브랜치의 branchNum */
   @Builder.Default
-  @Column(name = "child_branch_nums", nullable = false)
+  @Column(name = "child_branch_nums", nullable = false, comment = "이 포인트를 베이스로 하는 branch_num 목록(쉼표로 구분)")
   @Convert(converter = IntArrayConverter.class)
-  @Comment("이 포인트를 베이스로 하는 branch_num 목록(쉼표로 구분)")
   private int[] childBranchNums = new int[0];
 
   /**
@@ -122,6 +115,10 @@ public class PointEntity {
     this.childBranchNums = PathUtils.append(this.childBranchNums, branchNum);
   }
 
+  /**
+   * DTO로 변환
+   * @return 알맞은 DTO
+   */
   public PointDto.Response toResponse() {
     return new PointDto.Response(this.id, this.getBranchNum(), this.depth, this.itemId, this.childBranchNums,
         this.createdAt);

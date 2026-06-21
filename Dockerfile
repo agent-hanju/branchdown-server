@@ -1,6 +1,6 @@
 # Multi-stage build for optimized Docker image
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-jammy AS builder
+FROM eclipse-temurin:25-jdk-jammy AS builder
 
 WORKDIR /workspace
 
@@ -23,7 +23,7 @@ COPY src src
 RUN ./gradlew bootJar -x test --no-daemon
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 WORKDIR /app
 

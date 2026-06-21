@@ -5,10 +5,7 @@ server:
 spring:
   application:
     name: branchdown
-  # datasource: bootTestRun 시 Testcontainers가 자동 설정
-  cloud:
-    consul:
-      enabled: false
+  # datasource is supplied by Testcontainers when using bootTestRun.
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -16,7 +13,8 @@ spring:
     properties:
       hibernate:
         '[format_sql]': true
-        time-zone: ${TZ:UTC}
+        jdbc:
+          '[time_zone]': ${TZ:UTC}
     open-in-view: false
 
 management:

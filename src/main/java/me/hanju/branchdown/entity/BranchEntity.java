@@ -3,8 +3,6 @@ package me.hanju.branchdown.entity;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.annotations.Comment;
-
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -41,20 +39,18 @@ public class BranchEntity {
 
   @EmbeddedId
   @AttributeOverride(name = "streamId", column = @Column(name = "stream_id", nullable = false))
-  @AttributeOverride(name = "branchNum", column = @Column(name = "branch_num", nullable = false))
+  @AttributeOverride(name = "branchNum", column = @Column(name = "branch_num", nullable = false, comment = "스트림의 각 브랜치에 붙는 번호. 0부터 시작해 순차적으로 쌓인다."))
   private BranchId id;
 
   /** 브랜치가 속한 스트림 */
   @MapsId("streamId")
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "stream_id", nullable = false, updatable = false, foreignKey = @ForeignKey(name = "FK_branch_to_stream"))
-  @Comment("브랜치가 속한 스트림의 ID")
+  @JoinColumn(name = "stream_id", nullable = false, updatable = false, foreignKey = @ForeignKey(name = "FK_branch_to_stream"), comment="브랜치가 속한 스트림의 ID")
   private StreamEntity stream;
 
   /** 자기 자신까지 오기 위한 branch_num의 경로. 구분자는 "," */
   @Builder.Default
-  @Column(nullable = false, updatable = false, length = 500)
-  @Comment("자기 자신까지 오기 위한 branch_num의 경로. 구분자는 \",\"")
+  @Column(nullable = false, updatable = false, length = 500, comment = "자기 자신까지 오기 위한 branch_num의 경로. 구분자는 \",\"")
   private String path = "";
 
   /** 이 브랜치 소속 포인트들 */

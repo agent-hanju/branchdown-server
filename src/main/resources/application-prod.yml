@@ -1,19 +1,4 @@
 spring:
-  cloud:
-    consul:
-      enabled: ${CONSUL_ENABLED:false}
-      host: ${CONSUL_HOST:localhost}
-      port: ${CONSUL_PORT:8500}
-      discovery:
-        enabled: ${CONSUL_ENABLED:false}
-        service-name: branchdown
-        instance-id: ${DISCOVERY_HOST:localhost}:${SERVER_PORT:8080}
-        hostname: ${DISCOVERY_HOST:localhost}
-        port: ${SERVER_PORT:8080}
-        health-check-path: /actuator/health
-        management-port: ${MANAGEMENT_PORT:8081}
-        health-check-interval: 10s
-        acl-token: ${CONSUL_ACL_TOKEN:}
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}
@@ -36,7 +21,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
         exclude: heapdump,threaddump,env,configprops
   endpoint:
     health:
