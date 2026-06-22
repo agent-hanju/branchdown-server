@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -67,6 +66,16 @@ public class StreamEntity {
     if (branch != null) {
       this.branches.add(branch);
       nextBranchNum = Math.max(nextBranchNum, branch.getBranchNum() + 1);
+    }
+  }
+
+  /**
+   * nextBranchNum을 메모리 트리의 카운터와 동기화합니다.
+   * Tree 저장 완료 시점에 호출합니다.
+   */
+  public void syncNextBranchNum(final int value) {
+    if (value > nextBranchNum) {
+      nextBranchNum = value;
     }
   }
 

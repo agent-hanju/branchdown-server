@@ -2,8 +2,6 @@ package me.hanju.branchdown.entity.id;
 
 import java.io.Serializable;
 
-import org.hibernate.annotations.Comment;
-
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

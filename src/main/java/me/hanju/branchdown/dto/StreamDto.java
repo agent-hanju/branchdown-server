@@ -11,4 +11,10 @@ public class StreamDto {
       Long id,
       Instant createdAt) {
   }
+
+  public static record WithRootResponse(
+      Long id,
+      PointDto.Response root,
+      Instant createdAt) {
+  }
 }

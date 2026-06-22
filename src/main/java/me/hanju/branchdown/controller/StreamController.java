@@ -31,7 +31,8 @@ public class StreamController {
   @Operation(summary = "스트림 생성", description = "새로운 스트림을 생성합니다")
   @PostMapping
   public ResponseEntity<StreamDto.Response> createStream() {
-    StreamDto.Response response = streamService.createStream();
+    StreamDto.WithRootResponse created = streamService.createStream();
+    StreamDto.Response response = new StreamDto.Response(created.id(), created.createdAt());
     return ResponseEntity.ok(response);
   }
 

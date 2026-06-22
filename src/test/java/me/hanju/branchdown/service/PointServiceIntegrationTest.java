@@ -40,7 +40,7 @@ class PointServiceIntegrationTest extends IntegrationTestBase {
 
   @BeforeEach
   void setUp() {
-    StreamDto.Response stream = streamService.createStream();
+    StreamDto.WithRootResponse stream = streamService.createStream();
     streamId = stream.id();
     StreamEntity entity = streamRepository.findById(streamId).orElseThrow();
     rootPoint = entity.getBranches().get(0).getPoints().get(0);

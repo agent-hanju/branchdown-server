@@ -2,7 +2,9 @@ package me.hanju.branchdown.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
@@ -34,12 +36,14 @@ public class StreamService {
   private final PointRepository pointRepository;
 
   /**
-   * 스트림 생성
+   * 스트림 생성.
+   * 스트림 + 초기 브랜치(path="") + depth=0 synthetic root 포인트(itemId=null)를 생성합니다.
+   * root는 데이터를 담지 않는 구조적 앵커이므로 itemId를 받지 않습니다.
    *
-   * @return 생성된 StreamDto.Response
+   * @return 생성된 Stream과 root Point 응답
    */
   @Transactional
-  public StreamDto.Response createStream() {
+  public StreamDto.WithRootResponse createStream() {
     // 1. 스트림 생성
     final StreamEntity newStream = streamRepository.save(
         StreamEntity.builder().build());
@@ -53,7 +57,7 @@ public class StreamService {
             .build());
     newStream.addBranch(initialBranch);
 
-    // 3. 스트림의 루트 포인트 생성
+    // 3. 스트림의 synthetic root 포인트 생성 (itemId 미지정 = null)
     final PointEntity rootPoint = PointEntity.builder()
         .branch(initialBranch)
         .depth(StreamConstants.ROOT_POINT_DEPTH)
@@ -62,7 +66,10 @@ public class StreamService {
 
     initialBranch.addPoint(rootPoint);
 
-    return newStream.toResponse();
+    return new StreamDto.WithRootResponse(
+        newStream.getId(),
+        rootPoint.toResponse(),
+        newStream.getCreatedAt());
   }
 
   /**
@@ -77,6 +84,21 @@ public class StreamService {
         .findById(id)
         .orElseThrow(() -> new NoSuchElementException(STREAM_NOT_FOUND));
     return stream.toResponse();
+  }
+
+  /**
+   * 해당 스트림에서 다음에 발급할 branchNum을 반환합니다.
+   * Tree 부분 로드 후 appendChild할 때도 전체 스트림 기준 branchNum을 이어가기 위해 사용합니다.
+   *
+   * @param id 스트림 ID
+   * @return 다음 branchNum
+   */
+  @Transactional(readOnly = true)
+  public int getNextBranchNum(final Long id) {
+    return streamRepository
+        .findById(id)
+        .orElseThrow(() -> new NoSuchElementException(STREAM_NOT_FOUND))
+        .getNextBranchNum();
   }
 
   /**
@@ -112,6 +134,24 @@ public class StreamService {
     // 해당 path의 root부터 끝까지의 point 반환
     return this.getPointsByPath(stream.getId(), branchNums, -1)
         .stream()
+        .map(PointEntity::toResponse)
+        .toList();
+  }
+
+  /**
+   * 해당 스트림에 속한 모든 포인트를 반환합니다.
+   * 전체 Tree를 복원할 때처럼 브랜치 경로 하나가 아니라 스트림 전체 구조가 필요할 때 사용합니다.
+   *
+   * @param id 스트림 ID
+   * @return 해당 스트림의 모든 Point 목록
+   */
+  @Transactional(readOnly = true)
+  public List<PointDto.Response> getAllStreamPoints(final Long id) {
+    final List<PointEntity> points = pointRepository.findAllByStreamId(id);
+    if (points.isEmpty()) {
+      throw new NoSuchElementException(STREAM_NOT_FOUND);
+    }
+    return points.stream()
         .map(PointEntity::toResponse)
         .toList();
   }
@@ -173,5 +213,101 @@ public class StreamService {
       i += 1;
     }
     return clippedPoints;
+  }
+
+  /**
+   * 새로 appendChild된 노드들을 Stream에 일괄 저장합니다.
+   * <p>
+   * branch → point 순서로 insert하여 FK 제약을 만족시키고,
+   * 이미 영속된 부모 point의 childBranchNums도 함께 갱신합니다.
+   * </p>
+   *
+   * @param streamId        대상 스트림 ID
+   * @param newBranches     새로 생성할 branch 명세 목록
+   * @param newPoints       새로 생성할 point 명세 목록
+   * @param parentUpdates   이미 영속된 부모 point의 childBranchNums 갱신 목록
+   * @param nextBranchNum   저장 후 스트림에 반영할 nextBranchNum
+   * @return 각 point 명세의 nodeKey → 저장된 Point ID 매핑
+   */
+  @Transactional
+  public Map<Long, Long> persistAppendedNodes(
+      final Long streamId,
+      final List<NewBranchSpec> newBranches,
+      final List<NewPointSpec> newPoints,
+      final List<ParentPointUpdate> parentUpdates,
+      final int nextBranchNum) {
+    final StreamEntity stream = streamRepository
+        .findById(streamId)
+        .orElseThrow(() -> new NoSuchElementException(STREAM_NOT_FOUND));
+
+    // 새 branchNum이 현재 DB 카운터와 충돌하지 않는지 검증
+    final int currentNext = stream.getNextBranchNum();
+    for (final NewBranchSpec spec : newBranches) {
+      if (spec.branchNum() < currentNext) {
+        throw new IllegalStateException(
+            "Branch number conflict: " + spec.branchNum() + " is already used (nextBranchNum=" + currentNext + ")");
+      }
+    }
+
+    // 1. 새 branch 일괄 저장
+    final Map<Integer, BranchEntity> branchByNum = new HashMap<>();
+    for (final NewBranchSpec spec : newBranches) {
+      final BranchEntity branch = branchRepository.save(
+          BranchEntity.builder()
+              .id(new BranchId(streamId, spec.branchNum()))
+              .stream(stream)
+              .path(spec.path())
+              .build());
+      stream.addBranch(branch);
+      branchByNum.put(spec.branchNum(), branch);
+    }
+
+    // 기존에 저장된 branch도 조회 대상에 포함 (branchNum이 부모와 같은 노드는 새 branch 불필요)
+    for (final NewPointSpec spec : newPoints) {
+      if (!branchByNum.containsKey(spec.branchNum())) {
+        branchByNum.put(spec.branchNum(),
+            branchRepository.findById(new BranchId(streamId, spec.branchNum()))
+                .orElseThrow(() -> new IllegalStateException("Branch not found: " + spec.branchNum())));
+      }
+    }
+
+    // 2. 새 point 일괄 저장
+    final Map<Long, Long> nodeKeyToPointId = new HashMap<>();
+    for (final NewPointSpec spec : newPoints) {
+      final PointEntity point = pointRepository.save(
+          PointEntity.builder()
+              .branch(branchByNum.get(spec.branchNum()))
+              .depth(spec.depth())
+              .itemId(spec.itemId())
+              .childBranchNums(spec.childBranchNums())
+              .build());
+      branchByNum.get(spec.branchNum()).addPoint(point);
+      nodeKeyToPointId.put(spec.nodeKey(), point.getId());
+    }
+
+    // 3. 영속 부모 point의 childBranchNums 갱신
+    for (final ParentPointUpdate update : parentUpdates) {
+      final PointEntity parentPoint = pointRepository
+          .findById(update.pointId())
+          .orElseThrow(() -> new IllegalStateException("Parent point not found: " + update.pointId()));
+      parentPoint.setChildBranchNums(update.childBranchNums());
+    }
+
+    // 4. stream.nextBranchNum 동기화
+    stream.syncNextBranchNum(nextBranchNum);
+
+    return nodeKeyToPointId;
+  }
+
+  /** 새 branch 생성 명세 */
+  public record NewBranchSpec(int branchNum, String path) {
+  }
+
+  /** 새 point 생성 명세. nodeKey는 TreeNode를 식별하기 위한 임시 키. */
+  public record NewPointSpec(long nodeKey, int branchNum, int depth, String itemId, int[] childBranchNums) {
+  }
+
+  /** 영속된 부모 point의 childBranchNums 갱신 명세 */
+  public record ParentPointUpdate(long pointId, int[] childBranchNums) {
   }
 }

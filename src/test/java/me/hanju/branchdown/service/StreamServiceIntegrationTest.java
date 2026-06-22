@@ -40,9 +40,9 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
   private PointRepository pointRepository;
 
   @Test
-  @DisplayName("스트림 생성 시 초기 브랜치와 루트 포인트를 자동 생성한다")
+  @DisplayName("스트림 생성 시 초기 브랜치와 synthetic 루트 포인트(itemId=null)를 자동 생성한다")
   void createStream() {
-    StreamDto.Response response = streamService.createStream();
+    StreamDto.WithRootResponse response = streamService.createStream();
 
     assertThat(response.id()).isNotNull();
 
@@ -52,13 +52,16 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
     BranchEntity branch = stream.getBranches().get(0);
     assertThat(branch.getBranchNum()).isEqualTo(StreamConstants.INITIAL_BRANCH_NUM);
     assertThat(branch.getPoints()).hasSize(1);
-    assertThat(branch.getPoints().get(0).getDepth()).isEqualTo(StreamConstants.ROOT_POINT_DEPTH);
+
+    PointEntity rootPoint = branch.getPoints().get(0);
+    assertThat(rootPoint.getDepth()).isEqualTo(StreamConstants.ROOT_POINT_DEPTH);
+    assertThat(rootPoint.getItemId()).isNull();
   }
 
   @Test
   @DisplayName("스트림 조회")
   void getStream() {
-    StreamDto.Response created = streamService.createStream();
+    StreamDto.WithRootResponse created = streamService.createStream();
 
     StreamDto.Response found = streamService.getStream(created.id());
 
@@ -75,7 +78,7 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("스트림 삭제 시 연관 엔티티도 삭제된다")
   void deleteStream() {
-    StreamDto.Response created = streamService.createStream();
+    StreamDto.WithRootResponse created = streamService.createStream();
     Long streamId = created.id();
     int branchNum = streamRepository.findById(streamId).orElseThrow()
         .getBranches().get(0).getBranchNum();
@@ -102,7 +105,7 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-      StreamDto.Response stream = streamService.createStream();
+      StreamDto.WithRootResponse stream = streamService.createStream();
       streamId = stream.id();
       StreamEntity entity = streamRepository.findById(streamId).orElseThrow();
       rootPoint = entity.getBranches().get(0).getPoints().get(0);
@@ -144,7 +147,7 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-      StreamDto.Response stream = streamService.createStream();
+      StreamDto.WithRootResponse stream = streamService.createStream();
       streamId = stream.id();
       branch = streamRepository.findById(streamId).orElseThrow().getBranches().get(0);
     }

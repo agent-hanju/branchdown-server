@@ -28,37 +28,6 @@ public class PointService {
   private final BranchRepository branchRepository;
 
   /**
-   * 부모 포인트 아래에 새 포인트를 추가할 브랜치를 결정합니다.
-   * 이어지는 브랜치가 없다면 기존 브랜치를 사용하고,
-   * 있다면 신규 브랜치를 생성합니다.
-   *
-   * @param parent 부모 포인트
-   * @return 새 포인트가 속할 브랜치
-   */
-  public BranchEntity resolveBranch(final PointEntity parent) {
-    // 이어지는 브랜치가 없음
-    if (parent.getChildBranchNums().length == 0) {
-      return parent.getBranch();
-    }
-
-    // 신규 브랜치 생성
-    final BranchEntity parentBranch = parent.getBranch();
-    final StreamEntity stream = parentBranch.getStream();
-    final String newPath = PathUtils.append(
-        parentBranch.getPath(),
-        parentBranch.getBranchNum());
-    final BranchEntity newBranch = branchRepository.save(
-        BranchEntity.builder()
-            .id(new BranchId(stream.getId(), stream.getNextBranchNum()))
-            .stream(stream)
-            .path(newPath)
-            .build());
-    stream.addBranch(newBranch);
-
-    return newBranch;
-  }
-
-  /**
    * 지정한 PointEntity 아래에 적절한 브랜칭 후 PointEntity를 새로 추가한다.
    *
    * @param id     지정할 PointEntity의 id
@@ -73,7 +42,21 @@ public class PointService {
         .orElseThrow(() -> new NoSuchElementException("Point not found"));
 
     // 2. 브랜치 결정
-    BranchEntity branch = resolveBranch(point);
+    BranchEntity branch = point.getBranch();
+    if (point.getChildBranchNums().length > 0) {
+      final BranchEntity parentBranch = point.getBranch();
+      final StreamEntity stream = parentBranch.getStream();
+      final String newPath = PathUtils.append(
+          parentBranch.getPath(),
+          parentBranch.getBranchNum());
+      branch = branchRepository.save(
+          BranchEntity.builder()
+              .id(new BranchId(stream.getId(), stream.getNextBranchNum()))
+              .stream(stream)
+              .path(newPath)
+              .build());
+      stream.addBranch(branch);
+    }
     point.addChildBranchNum(branch.getBranchNum());
 
     // 3. 포인트 추가

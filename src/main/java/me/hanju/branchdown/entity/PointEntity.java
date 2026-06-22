@@ -3,7 +3,6 @@ package me.hanju.branchdown.entity;
 import java.time.Instant;
 
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -113,6 +112,16 @@ public class PointEntity {
    */
   public void addChildBranchNum(final int branchNum) {
     this.childBranchNums = PathUtils.append(this.childBranchNums, branchNum);
+  }
+
+  /**
+   * childBranchNums를 새 배열로 교체합니다.
+   * Tree 저장 시 영속 부모 point의 자식 목록을 일괄 갱신할 때 사용합니다.
+   *
+   * @param childBranchNums 교체할 배열
+   */
+  public void setChildBranchNums(final int[] childBranchNums) {
+    this.childBranchNums = childBranchNums;
   }
 
   /**
