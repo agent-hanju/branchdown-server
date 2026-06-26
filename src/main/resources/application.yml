@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: branchdown
+    name: branchdown-server
   # datasource is supplied by Testcontainers when using bootTestRun.
   jpa:
     hibernate:

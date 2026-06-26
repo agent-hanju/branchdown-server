@@ -45,42 +45,14 @@ public class PathUtils {
     if (path == null) {
       throw new IllegalStateException("Path cannot be null");
     }
-    if (contains(path, value)) {
-      return path;
+    for (final int v : path) {
+      if (v == value) {
+        return path;
+      }
     }
     final int[] result = Arrays.copyOf(path, path.length + 1);
     result[path.length] = value;
     return result;
-  }
-
-  /**
-   * int 배열에 값이 포함되어 있는지 반환합니다.
-   *
-   * @param path  검사할 배열
-   * @param value 찾을 값
-   * @return 값이 포함되어 있으면 true
-   */
-  public static boolean contains(final int[] path, final int value) {
-    return indexOf(path, value) >= 0;
-  }
-
-  /**
-   * int 배열에서 값의 첫 위치를 반환합니다.
-   *
-   * @param path  검사할 배열
-   * @param value 찾을 값
-   * @return 값의 첫 위치, 없으면 -1
-   */
-  public static int indexOf(final int[] path, final int value) {
-    if (path == null) {
-      throw new IllegalStateException("Path cannot be null");
-    }
-    for (int i = 0; i < path.length; i += 1) {
-      if (path[i] == value) {
-        return i;
-      }
-    }
-    return -1;
   }
 
   /**

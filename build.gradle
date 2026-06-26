@@ -5,16 +5,17 @@ plugins {
 }
 group = 'dev.hanju'
 version = '0.4.0'
-description = "Branching, Append-Only Tree Structure API"
+description = "branchdown-server: Branching, Append-Only Tree Structure REST API Server"
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(25)
+    languageVersion = JavaLanguageVersion.of(17)
   }
 }
 
 repositories {
   mavenCentral()
+  maven { url 'https://jitpack.io' }
 }
 
 ext {
@@ -33,6 +34,7 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
   implementation 'org.springframework.boot:spring-boot-starter-actuator'
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
+  implementation 'com.github.agent-hanju:branchdown:0.4.0'
   developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
   runtimeOnly 'org.postgresql:postgresql'

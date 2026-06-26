@@ -16,8 +16,8 @@ public interface BranchRepository extends JpaRepository<BranchEntity, BranchId> 
       FROM BranchEntity b
       JOIN b.points p
       WHERE b.stream = :stream
-      ORDER BY p.createdAt DESC
+      ORDER BY p.id.seq DESC
       LIMIT 1
       """)
-  Optional<BranchEntity> findLatestBranchInChat(StreamEntity stream);
+  Optional<BranchEntity> findLatestBranchInStream(StreamEntity stream);
 }

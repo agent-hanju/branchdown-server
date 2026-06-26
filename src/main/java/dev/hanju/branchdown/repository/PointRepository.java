@@ -1,21 +1,27 @@
 package dev.hanju.branchdown.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import dev.hanju.branchdown.entity.PointEntity;
+import dev.hanju.branchdown.entity.id.PointId;
 
-public interface PointRepository extends JpaRepository<PointEntity, Long> {
+public interface PointRepository extends JpaRepository<PointEntity, PointId> {
 
+  /**
+   * 특정 스트림의 root 포인트를 조회한다.
+   *
+   * @param streamId 스트림 ID
+   * @return 해당 스트림의 루트 Point
+   */
   @Query("""
-      SELECT p
-      FROM PointEntity p
-      WHERE p.stream.id = :streamId
-      ORDER BY p.depth ASC, p.branchNum ASC, p.id ASC
+      SELECT p FROM PointEntity p
+      WHERE p.id.streamId = :streamId AND p.id.seq = 0
       """)
-  List<PointEntity> findAllByStreamId(Long streamId);
+  Optional<PointEntity> findRootByStreamId(Long streamId);
 
   /**
    * 특정 브랜치 경로에서 depth를 초과하는 Point들을 조회합니다.

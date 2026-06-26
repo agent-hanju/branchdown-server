@@ -1,1 +1,8 @@
-rootProject.name = 'branchdown'
+rootProject.name = 'branchdown-server'
+
+// 로컬 개발용: branchdown-core를 소스에서 직접 참조 (배포 후 제거)
+includeBuild('../branchdown-core') {
+  dependencySubstitution {
+    substitute module('com.github.agent-hanju:branchdown') using project(':')
+  }
+}

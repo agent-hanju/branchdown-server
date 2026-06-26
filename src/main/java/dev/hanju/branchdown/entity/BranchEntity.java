@@ -25,7 +25,7 @@ import lombok.Setter;
 import lombok.ToString;
 import dev.hanju.branchdown.entity.id.BranchId;
 
-/** 분기 관리를 위한 중간 엔티티 */
+/** 분기 관리를 위한 링크용 엔티티 */
 @Builder
 @Getter
 @Setter(AccessLevel.PRIVATE)

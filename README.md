@@ -1,6 +1,6 @@
-# Branchdown
+# branchdown-server
 
-브랜치 기반 Append-Only 트리 구조 API
+브랜치 기반 Append-Only 트리 구조 REST API 서버
 
 ## 프로젝트 개요
 
@@ -38,8 +38,8 @@ Stream
 Testcontainers를 사용하여 PostgreSQL과 함께 로컬에서 실행합니다. Docker가 실행 중이어야 합니다.
 
 ```bash
-git clone https://github.com/agent-hanju/branchdown.git
-cd branchdown
+git clone https://github.com/agent-hanju/branchdown-server.git
+cd branchdown-server
 
 # 실행 (Testcontainers로 PostgreSQL 자동 시작)
 ./gradlew bootTestRun
@@ -77,10 +77,10 @@ open http://localhost:8080/docs
   "createdAt": "2026-01-06T12:00:00"
 }
 
-// GET /api/points/5/ancestors
+// GET /api/streams/1/points/5/ancestors
 [
-  { "id": 1, "streamId": 1, "branchNum": 0, "depth": 0, "itemId": null },
-  { "id": 5, "streamId": 1, "branchNum": 0, "depth": 1, "itemId": "item-uuid" }
+  { "seq": 0, "branchNum": 0, "depth": 0, "itemId": null },
+  { "seq": 5, "branchNum": 0, "depth": 1, "itemId": "item-uuid" }
 ]
 
 // DELETE /api/streams/1
@@ -121,40 +121,40 @@ open http://localhost:8080/docs
 
 #### Point API
 
-| Method | Endpoint                     | 설명                                               |
-| ------ | ---------------------------- | -------------------------------------------------- |
-| POST   | `/api/points/{id}/down`      | Point 추가 (지정한 Point 아래에 추가, 브랜칭 포함) |
-| GET    | `/api/points/{id}/ancestors` | 조상 Point 조회 (자신 포함, 루트 제외)             |
+| Method | Endpoint                                           | 설명                                               |
+| ------ | -------------------------------------------------- | -------------------------------------------------- |
+| POST   | `/api/streams/{streamId}/points/{seq}/down`        | Point 추가 (지정한 Point 아래에 추가, 브랜칭 포함) |
+| GET    | `/api/streams/{streamId}/points/{seq}/ancestors`   | 조상 Point 조회 (자신 포함, 루트 제외)             |
 
-자세한 API 명세는 [DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md) 참조
+자세한 스키마 명세는 [DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md) 참조
 
 ## 프로젝트 구조
 
 ```
-branchdown/
-├── src/main/java/me/hanju/branchdown/
+branchdown-server/
+├── src/main/java/dev/hanju/branchdown/
 │   ├── config/              # Spring 설정
 │   │   ├── GlobalExceptionHandler.java
 │   │   └── ...
 │   ├── controller/          # REST API 컨트롤러
-│   │   ├── StreamController.java
-│   │   └── PointController.java
+│   │   └── StreamController.java
 │   ├── dto/                 # 요청/응답 DTO
 │   │   ├── StreamDto.java
+│   │   ├── BranchDto.java
 │   │   └── PointDto.java
 │   ├── entity/              # JPA 엔티티
 │   │   ├── StreamEntity.java
 │   │   ├── BranchEntity.java
 │   │   ├── PointEntity.java
 │   │   └── id/
-│   │       └── BranchId.java       # Composite Key
+│   │       ├── BranchId.java       # Composite Key
+│   │       └── PointId.java        # Composite Key
 │   ├── repository/          # JPA Repository
 │   │   ├── StreamRepository.java
 │   │   ├── BranchRepository.java
 │   │   └── PointRepository.java
 │   ├── service/             # 비즈니스 로직
-│   │   ├── StreamService.java
-│   │   └── PointService.java
+│   │   └── StreamService.java
 │   └── util/                # 유틸리티
 │       └── PathUtils.java          # 브랜치 경로 계산
 └── src/main/resources/
